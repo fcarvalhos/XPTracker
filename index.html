@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Chronicle of Experience</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{--wood:#2a1b12;--wood2:#3d291b;--parch:#e8d5a8;--parch2:#d9c08a;--ink:#2b1d10;--gold:#c79a2e;--wine:#8a1f2b;--moss:#3f6b3a;--mute:#6b5636}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at top,#4a3222,var(--wood) 70%) fixed;color:var(--ink);font:18px/1.45 'IM Fell English',Georgia,serif;min-height:100vh}
+h1,h2,.cz{font-family:Cinzel,serif;letter-spacing:.04em}
+header{text-align:center;padding:28px 12px 8px;color:var(--parch)}
+h1{margin:0;font-size:clamp(26px,5vw,44px);color:var(--gold);text-shadow:0 2px 0 #000}
+header p{margin:4px 0 0;font-style:italic;opacity:.8}
+#status{font-size:14px;margin-top:6px}
+#keybtn{background:none;border:1px solid var(--gold);color:var(--gold);border-radius:3px;cursor:pointer;font:14px Cinzel,serif;margin-top:6px;padding:3px 10px}
+nav{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:14px 0}
+nav button{font:600 15px Cinzel,serif;background:var(--wood2);color:var(--parch);border:2px solid var(--gold);padding:8px 16px;cursor:pointer;border-radius:3px 12px 3px 12px}
+nav button.on{background:var(--gold);color:var(--ink)}
+main{max-width:900px;margin:0 auto;padding:0 12px 80px}
+.card{background:linear-gradient(135deg,var(--parch),var(--parch2));border:3px double var(--wood);outline:2px solid var(--gold);outline-offset:-8px;border-radius:6px;padding:22px 24px;margin-bottom:18px;box-shadow:0 6px 18px #0009}
+.card h2{margin:0 0 10px;font-size:22px;color:var(--wine)}
+.form{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin:10px 0}
+.form label{display:flex;flex-direction:column;font-size:15px;color:var(--mute);gap:2px}
+input,select{font:inherit;padding:6px 10px;background:#fff8;border:2px solid var(--wood);border-radius:3px;color:var(--ink)}
+input:focus,select:focus,button:focus-visible{outline:3px solid var(--wine)}
+.btn{font:600 14px Cinzel,serif;border:1.5px solid var(--wood);background:var(--parch);color:var(--ink);padding:7px 14px;cursor:pointer;border-radius:3px}
+.btn:hover{background:var(--gold)}
+.btn.main{background:var(--wine);color:var(--parch)}
+.x{background:none;border:0;color:var(--wine);cursor:pointer;font-size:16px}
+table{border-collapse:collapse;width:100%}
+th,td{padding:7px 6px;border-bottom:1px dashed #8a6d3b88;text-align:left}
+th{font:600 13px Cinzel,serif;color:var(--mute)}
+.fn{font-weight:bold}.tier{font-style:italic;font-size:15px;color:var(--mute)}
+.prow{display:grid;grid-template-columns:minmax(140px,1fr) 60px 130px;gap:4px 12px;align-items:center;padding:9px 0;border-top:1px dashed #8a6d3b88}
+.prow .pv{grid-column:1/-1;font-size:16px}
+.prow input[type=number]{width:130px}
+.prow input[type=checkbox]{width:18px;height:18px;accent-color:var(--wine)}
+.up{color:var(--moss);font-weight:bold}.down{color:var(--wine);font-weight:bold}
+.row2{padding:3px 0}
+.entry{padding:10px 0;border-top:1px dashed #8a6d3b88}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--wood);color:var(--parch);border:2px solid var(--gold);padding:10px 18px;border-radius:4px;opacity:0;pointer-events:none;transition:opacity .25s;max-width:90vw;z-index:9}
+#toast.show{opacity:1}#toast.bad{border-color:#e06060;color:#ffd0d0}
+a{color:var(--wine)}
+@media(max-width:560px){.card{padding:18px 16px}.prow{grid-template-columns:1fr 50px}.prow input[type=number]{width:100%;grid-column:1/-1}}
+@media(prefers-reduced-motion:reduce){#toast{transition:none}}
+</style></head><body>
+<header><h1>⚔ The Chronicle of Experience ⚔</h1><p>Deeds, spoils and level-ups of the company</p>
+<div id="status"></div><button id="keybtn" data-act="key">🔑 DM key</button></header>
+<nav id="nav"></nav><main id="app"></main><div id="toast" role="status"></div>
+<script>
+const CONFIG={API_URL:'https://script.google.com/macros/s/AKfycbyWjsIheFjOCT1d5oUDOtv7d6Y_FgzQ_l9Ee8gbHHuFYinsDzdZBOAJJhKFtBfsiSD7XA/exec',POLL_SECONDS:30}; // paste your Apps Script Web App URL. Empty = local demo mode
+const API=CONFIG.API_URL;
+const LV=[0,300,900,2700,6500,14000,23000,34000,48000,64000,85000,100000,120000,140000,165000,195000,225000,265000,305000,355000];
+const lvl=xp=>{let l=1;for(let i=0;i<20;i++)if(xp>=LV[i])l=i+1;return l};
+const fmt=n=>Number(n).toLocaleString('en-US');
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,10);
+const today=()=>new Date().toLocaleDateString('sv-SE');
+const ROLE={player:'Player',dm:'DM',both:'Player & DM'};
+let S={people:[],log:[],meta:{}},tab='roster',busy=false,last=null;
+const sess={dm:'',date:today(),note:'',sel:{},same:''};
+
+/* ---- helpers ---- */
+let tt;function toast(m,bad){const t=document.getElementById('toast');t.textContent=m;t.className=bad?'bad show':'show';clearTimeout(tt);tt=setTimeout(()=>t.className='',6000)}
+const setSt=(t,c)=>{const e=document.getElementById('status');e.textContent=t;e.style.color=c||'#e8d5a8'};
+const lvTxt=(a,b)=>b>a?`<span class="up">⬆ Level up! ${a} → ${b} (+${b-a})</span>`:b<a?`<span class="down">⬇ Level ${a} → ${b}</span>`:`<span class="tier">Level ${b}</span>`;
+function pv(p,d){d=Math.round(+d)||0;const to=Math.max(0,p.xp+d),a=lvl(p.xp),b=lvl(to);
+  let h=`${fmt(p.xp)} → <b>${fmt(to)}</b> XP · ${lvTxt(a,b)}`;
+  if(b===a)h+=b<20?` <span class="tier">· ${fmt(LV[b]-to)} XP to next</span>`:' <span class="tier">(max)</span>';return h}
+const chg=en=>`<p class="tier">${esc(en.date)} · DM: ${esc(en.dm)}${en.note?' · '+esc(en.note):''}</p>`+
+  en.changes.map(c=>`<div class="row2"><b>${esc(c.name)}</b> ${c.delta>0?'+':''}${fmt(c.delta)} XP (${fmt(c.from)} → ${fmt(c.to)}) ${lvTxt(c.lvFrom,c.lvTo)}</div>`).join('');
+
+/* ---- data layer (server, or local demo) ---- */
+function local(a,d){
+  const s=JSON.parse(localStorage.getItem('xpTracker')||'null')||{people:[],log:[],meta:{}};
+  if(a==='addPerson'){const n=String(d.name||'').trim();if(!n)throw new Error('Name required');
+    if(s.people.some(p=>p.name.toLowerCase()===n.toLowerCase()))throw new Error(n+' already exists');
+    s.people.push({id:uid(),name:n,role:d.role,xp:LV[Math.min(20,Math.max(1,+d.level||1))-1]})}
+  else if(a==='removePerson')s.people=s.people.filter(p=>p.id!==d.id);
+  else if(a==='session'){const dm=s.people.find(p=>p.id===d.dm);if(!dm)throw new Error('Pick a DM');const ch=[];
+    d.entries.forEach(en=>{const p=s.people.find(x=>x.id===en.id),dl=Math.round(+en.delta);if(!p||!dl)return;
+      const f=p.xp,t=Math.max(0,f+dl);p.xp=t;ch.push({id:p.id,name:p.name,delta:t-f,from:f,to:t,lvFrom:lvl(f),lvTo:lvl(t)})});
+    if(!ch.length)throw new Error('No XP changes to record');
+    s.log.unshift({t:Date.now(),date:d.date||today(),dm:dm.name,note:d.note||'',changes:ch});s.log=s.log.slice(0,30)}
+  localStorage.setItem('xpTracker',JSON.stringify(s));
+  return{state:s,warnings:a==='session'?['Demo mode: nothing was sent to Drive or Discord.']:[]}}
+async function api(action,data){
+  if(!API)return local(action,data);
+  const r=await fetch(API,{method:'POST',body:JSON.stringify({key:localStorage.getItem('dmKey')||'',action,...data})});
+  const j=await r.json();if(j.error)throw new Error(j.error);return j}
+async function run(action,data,msg){
+  if(busy)return null;busy=true;document.body.style.cursor='progress';let j=null;
+  try{j=await api(action,data);S=j.state;if(j.warnings&&j.warnings.length)toast(j.warnings.join(' | '),true);else if(msg)toast(msg)}
+  catch(e){toast(e.message,true)}
+  busy=false;document.body.style.cursor='';render();return j}
+async function load(first){
+  try{if(API){const r=await fetch(API);const d=await r.json();if(d.error)throw new Error(d.error);S=d;setSt('📜 Synced with Google Sheets','#9fd18b')}
+    else{S=JSON.parse(localStorage.getItem('xpTracker')||'null')||S;setSt('Demo mode: data stays in this browser. Nothing goes to Drive or Discord.','#e0b060')}}
+  catch(e){setSt('Could not reach the sheet: '+e.message,'#ff9a9a')}
+  if(first||!document.activeElement.matches('input,select'))render()}
+
+/* ---- views ---- */
+function rosterView(){
+  return `<div class="card"><h2>Register a hero or a Dungeon Master</h2>
+  <div class="form"><label>Name<input id="pn" maxlength="60" placeholder="Character or person"></label>
+  <label>Role<select id="pr"><option value="player">Player</option><option value="dm">DM</option><option value="both">Player &amp; DM</option></select></label>
+  <label>Starting level<select id="pl">${Array.from({length:20},(_,i)=>`<option>${i+1}</option>`).join('')}</select></label>
+  <button class="btn main" data-act="addp">Add to the roster</button></div></div>
+  <div class="card"><h2>The Roster</h2>${S.people.length?`<table><tr><th>Name</th><th>Role</th><th>Level</th><th>XP</th><th></th></tr>`+
+  S.people.map(p=>`<tr><td class="fn">${esc(p.name)}</td><td>${ROLE[p.role]||''}</td><td>${p.role==='dm'?'—':lvl(p.xp)}</td><td>${p.role==='dm'?'—':fmt(p.xp)}</td>
+  <td><button class="x" data-act="delp" data-id="${p.id}" title="Remove ${esc(p.name)}">✕</button></td></tr>`).join('')+`</table>`:'<p>The roster is empty. Register your first adventurer above.</p>'}</div>`}
+function sessionView(){
+  const dms=S.people.filter(p=>p.role!=='player'),pls=S.people.filter(p=>p.role!=='dm'&&p.id!==sess.dm);let h='';
+  if(last)h+=`<div class="card"><h2>Session recorded</h2>${chg(last)}</div>`;
+  h+=`<div class="card"><h2>Session details</h2><div class="form">
+  <label>Dungeon Master<select id="sdm"><option value="">— choose —</option>${dms.map(p=>`<option value="${p.id}"${p.id===sess.dm?' selected':''}>${esc(p.name)}</option>`).join('')}</select></label>
+  <label>Date<input type="date" id="sdate" value="${esc(sess.date)}"></label>
+  <label>Note<input id="snote" size="26" maxlength="200" placeholder="Optional" value="${esc(sess.note)}"></label></div></div>
+  <div class="card"><h2>Players &amp; XP earned</h2>`;
+  if(!pls.length)h+='<p>No players yet. Register them in the Roster tab.</p>';
+  else{h+=`<div class="form"><label>Same XP for everyone selected<input id="same" type="number" step="1" value="${esc(sess.same)}" placeholder="e.g. 450"></label>
+    <button class="btn" data-act="applySame">Apply</button><button class="btn" data-act="selAll">Select all</button><button class="btn" data-act="selNone">Clear</button></div>`+
+    pls.map(p=>{const on=p.id in sess.sel;return `<div class="prow"><label class="fn"><input type="checkbox" data-chk="${p.id}"${on?' checked':''}> ${esc(p.name)}</label>
+    <span class="tier">Lv ${lvl(p.xp)}</span><input type="number" step="1" data-d="${p.id}" placeholder="XP ±" value="${on?esc(sess.sel[p.id]):''}"${on?'':' disabled'} aria-label="XP for ${esc(p.name)}">
+    <div class="pv" id="pv-${p.id}">${on?pv(p,sess.sel[p.id]):fmt(p.xp)+' XP'}</div></div>`}).join('')+
+    `<div class="form"><button class="btn main" data-act="submit">Record session</button></div>`}
+  return h+'</div>'}
+function logView(){
+  return `<div class="card"><h2>Recent sessions</h2>${S.meta&&/^https:\/\/docs\.google\.com\//.test(S.meta.logUrl||'')?`<p><a href="${esc(S.meta.logUrl)}" target="_blank" rel="noopener">Open the full log in Google Drive</a></p>`:''}
+  ${S.log.map(en=>`<div class="entry">${chg(en)}</div>`).join('')||'<p>No sessions recorded yet.</p>'}</div>`}
+function render(){
+  const T=[['roster','Roster'],['session','Session XP'],['log','Log']];
+  document.getElementById('nav').innerHTML=T.map(([k,n])=>`<button class="${tab===k?'on':''}" data-act="tab" data-t="${k}">${n}</button>`).join('');
+  document.getElementById('app').innerHTML={roster:rosterView,session:sessionView,log:logView}[tab]()}
+
+/* ---- events ---- */
+document.addEventListener('click',async e=>{
+  const el=e.target.closest('[data-act]');if(!el)return;const a=el.dataset.act;
+  if(a==='tab'){tab=el.dataset.t;render()}
+  else if(a==='key'){const k=prompt('Enter the DM key (leave empty to clear):',localStorage.getItem('dmKey')||'');if(k!==null){localStorage.setItem('dmKey',k.trim());toast('DM key saved in this browser')}}
+  else if(a==='addp'){const n=document.getElementById('pn').value.trim();if(!n)return toast('Enter a name first.',true);
+    await run('addPerson',{name:n,role:document.getElementById('pr').value,level:document.getElementById('pl').value},n+' registered')}
+  else if(a==='delp'){if(confirm('Remove this person from the roster?')){delete sess.sel[el.dataset.id];await run('removePerson',{id:el.dataset.id})}}
+  else if(a==='selAll'){S.people.filter(p=>p.role!=='dm'&&p.id!==sess.dm).forEach(p=>{if(!(p.id in sess.sel))sess.sel[p.id]=sess.same});render()}
+  else if(a==='selNone'){sess.sel={};render()}
+  else if(a==='applySame'){Object.keys(sess.sel).forEach(id=>sess.sel[id]=sess.same);render()}
+  else if(a==='submit'){
+    const entries=Object.entries(sess.sel).map(([id,d])=>({id,delta:Math.round(+d)||0})).filter(x=>x.delta);
+    if(!sess.dm)return toast('Choose the DM first.',true);
+    if(!entries.length)return toast('Select players and enter XP.',true);
+    const j=await run('session',{dm:sess.dm,date:sess.date,note:sess.note,entries},'Session recorded');
+    if(j){last=S.log[0];sess.sel={};sess.note='';render();window.scrollTo(0,0)}}});
+document.addEventListener('change',e=>{const t=e.target;
+  if(t.dataset.chk){if(t.checked)sess.sel[t.dataset.chk]=sess.same;else delete sess.sel[t.dataset.chk];render()}
+  else if(t.id==='sdm'){sess.dm=t.value;delete sess.sel[t.value];render()}});
+document.addEventListener('input',e=>{const t=e.target;
+  if(t.dataset.d){sess.sel[t.dataset.d]=t.value;const p=S.people.find(x=>x.id===t.dataset.d);document.getElementById('pv-'+t.dataset.d).innerHTML=pv(p,t.value)}
+  else if(t.id==='same')sess.same=t.value;else if(t.id==='sdate')sess.date=t.value;else if(t.id==='snote')sess.note=t.value});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='pn')document.querySelector('[data-act=addp]').click()});
+load(true);
+if(API)setInterval(()=>{if(!busy)load(false)},CONFIG.POLL_SECONDS*1000);
+</script></body></html>
