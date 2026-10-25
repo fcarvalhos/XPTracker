@@ -118,8 +118,8 @@ function sessionView(){
   <label>Note<input id="snote" size="26" maxlength="200" placeholder="Optional" value="${esc(sess.note)}"></label></div></div>
   <div class="card"><h2>Players &amp; XP earned</h2>`;
   if(!pls.length)h+='<p>No players yet. Register them in the Roster tab.</p>';
-  else{h+=`<div class="form"><label>Same XP for everyone selected<input id="same" type="number" step="1" value="${esc(sess.same)}" placeholder="e.g. 450"></label>
-    <button class="btn" data-act="applySame">Apply</button><button class="btn" data-act="selAll">Select all</button><button class="btn" data-act="selNone">Clear</button></div>`+
+  else{h+=`<div class="form"><label>Same XP for all (or for those ticked)<input id="same" type="number" step="1" value="${esc(sess.same)}" placeholder="e.g. 450"></label>
+    <button class="btn" data-act="applySame">Fill in XP</button><button class="btn" data-act="selAll">Select all</button><button class="btn" data-act="selNone">Clear</button></div>`+
     pls.map(p=>{const on=p.id in sess.sel;return `<div class="prow"><label class="fn"><input type="checkbox" data-chk="${p.id}"${on?' checked':''}> ${esc(p.name)}</label>
     <span class="tier">Lv ${lvl(p.xp)}</span><input type="number" step="1" data-d="${p.id}" placeholder="XP ±" value="${on?esc(sess.sel[p.id]):''}"${on?'':' disabled'} aria-label="XP for ${esc(p.name)}">
     <div class="pv" id="pv-${p.id}">${on?pv(p,sess.sel[p.id]):fmt(p.xp)+' XP'}</div></div>`}).join('')+
@@ -143,7 +143,7 @@ document.addEventListener('click',async e=>{
   else if(a==='delp'){if(confirm('Remove this person from the roster?')){delete sess.sel[el.dataset.id];await run('removePerson',{id:el.dataset.id})}}
   else if(a==='selAll'){S.people.filter(p=>p.role!=='dm'&&p.id!==sess.dm).forEach(p=>{if(!(p.id in sess.sel))sess.sel[p.id]=sess.same});render()}
   else if(a==='selNone'){sess.sel={};render()}
-  else if(a==='applySame'){Object.keys(sess.sel).forEach(id=>sess.sel[id]=sess.same);render()}
+  else if(a==='applySame'){if(sess.same==='')return toast('Type an XP amount first.',true);const ids=Object.keys(sess.sel).length?Object.keys(sess.sel):S.people.filter(p=>p.role!=='dm'&&p.id!==sess.dm).map(p=>p.id);ids.forEach(id=>sess.sel[id]=sess.same);render()}
   else if(a==='submit'){
     const entries=Object.entries(sess.sel).map(([id,d])=>({id,delta:Math.round(+d)||0})).filter(x=>x.delta);
     if(!sess.dm)return toast('Choose the DM first.',true);
